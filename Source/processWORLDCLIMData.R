@@ -128,10 +128,10 @@ processWORLDCLIMData <- function(climNames, climURL, latLimits, longLimits, clim
 	bioclimData <- SpatialGridDataFrame(getGridTopology(bioclimList[[1]]), bioclimDataFrame, CRS(proj4string(bioclimList[[1]])))
 	# Delete the downloaded and unpacked data
 	if(unlink(paste(inOutFolder, "/", inClimFolder, ".zip", sep = "")) != 0) {
-		stop("unable to delete downloaded climate data")
+		warning("unable to delete downloaded climate data")
 	}
 	if(unlink(paste(inOutFolder, "/", inClimFolder, sep = ""), recursive = TRUE) != 0) {
-		stop("unable to delete downloaded climate data")
+		warning("unable to delete downloaded climate data")
 	}
 	# Return the bioclimate data
 	bioclimData
