@@ -15,8 +15,8 @@ outputLoc <- "E:/Temp"
 outputSubLoc <- "OccurrenceData"
 # GBIF login credentials
 gbifLoginCredentials <- list(
-	username = "joechip90",               # The GBIF username  
-	password = "badt00th",                # The GBIF password
+	username = "username",               # The GBIF username  
+	password = "password",                # The GBIF password
 	email = "joechip90@googlemail.com"    # The GBIF email
 )
 # Maximum time (in seconds) to wait before failure when attempting to download occurrence data
