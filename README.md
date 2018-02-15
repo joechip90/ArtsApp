@@ -29,9 +29,9 @@ This script downloads occurrence data from GBIF and processes them: keeps only r
 4. __outputLoc__ The location to store the outputs.
 5. __outputSubLoc__ The subfolder in the output location to store the outputs.  Warning: all files in this directory will be overwritten.
 6. __gbifLoginCredentials__ A list containing the GBIF login credentials.  The list should have three components:
-  1. __username__ The GBIF username.
-  2. __password__ The GBIF password.
-  3. __email__ The email used in GBIF registration (it used often used as a notification email that the occurrence data is ready for download).
+    1. __username__ The GBIF username.
+    2. __password__ The GBIF password.
+    3. __email__ The email used in GBIF registration (it used often used as a notification email that the occurrence data is ready for download).
 7. __gbifMaxTime__ The maximum amount of time (in seconds) to wait for GBIF to prepare the download.
 8. __gbifAttemptTime__ The amount of time (in seconds) to wait between queries to the GBIF server to see if the download is ready.
 9. __yearLimits__ A vector of years specifying the range of years to take observation from (this is given by range(yearLimits, na.rm = TRUE).  For example: 'yearLimits <- c(1960, Inf)' would select all occurrence records between 1960 and the current day.
