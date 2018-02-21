@@ -14,9 +14,9 @@
 #' in the downloaded WORLDCLIM data compressed file.
 #' @param climExt A character scalar denoting the extension for the climate data.
 #' @param createGeoTIFF A logical scalar.  If \code{TRUE} then a series of GeoTIFF files are created
-#' in the \code{climFolder} subfolder of \code{outFolder} for each layer.
+#' in the \code{outFolder} directory for each layer.
 #' @param createRObFile A logical scalar.  If \code{TRUE} then an R object file (with extension .rds) is
-#' created in the \code{climFolder} subfolder of \code{outFolder}.
+#' created in the \code{outFolder} durectory for each layer.
 #' @param outFolder A character scalar denoting the folder to place the uncompressed and processed
 #' WORLDCLIM data.
 #' @param clipX A numeric vector.  \code{range(clipX, na.rm =TRUE)} returns the x-coordinates to clip
@@ -108,7 +108,7 @@ processWORLDCLIMData <- function(climNames, climURL, climFolder = "WORLDCLIMData
 		stop(paste("invalid entry for the R object file creation flag:", err, sep = " "))
 	})
 	if(length(inCreateRObFile) <= 0) {
-		stop("invalid entry for the R object fiel creation flag: zero vector length")
+		stop("invalid entry for the R object file creation flag: zero vector length")
 	} else if(length(inCreateRObFile) > 1) {
 		warning("R object creation flag vector length greater than one: only the first element will be used")
 		inCreateRObFile <- inCreateRObFile[1]

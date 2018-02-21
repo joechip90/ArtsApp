@@ -17,7 +17,6 @@ outputSubLoc <- "WORLDCLIMData"
 clipRegionLoc <- "E:/Dropbox (Personal)/Work/BiodiversitetVeinett/Data/GADMNorway"
 # Set the name of the clipping region layer
 clipRegionLayerName <- "NOR_adm0"
-
 # Set the names and description of the climate variables to import
 climateVariableDescriptions <- list(
 	"wc2.0_bio_10m_01" = expression("Annual Mean Temperature (d" * degree * "C)"),
@@ -47,6 +46,6 @@ processedClimateData <- tryCatch(processWORLDCLIMData(names(climateVariableDescr
 		stop(paste("error encountered during processing of WORLDCLIM data:", err, sep = " "))
 })
 # Save the outputs
-saveRDS(list(climateData = processedOutput, climateDescription = climateVariableDescriptions), file = paste(outputLoc, "/", outputSubLoc, "/ProcessedClimateData.rds", sep = ""))
+saveRDS(list(climateData = processedClimateData, climateDescription = climateVariableDescriptions), file = paste(outputLoc, "/", outputSubLoc, "/ProcessedClimateData.rds", sep = ""))
 # Close the progress bar
 close(curProgress)

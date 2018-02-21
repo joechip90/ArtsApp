@@ -185,7 +185,7 @@ processOccupancyData <- function(speciesIDs, templateGrid, outFolder = paste(tem
 	### 1.4 ==== Download GBIF occurrence data ====
 	# Retrieve a download ID from GBIF
 	downloadID <- tryCatch(occ_download(body = downloadQuery, user = gbifCredentials[1], pwd = gbifCredentials[2], email = gbifCredentials[3]), error = function(err) {
-		stop(paste("error encountered during initialisation of GBIF download:", sep = " "))
+		stop(paste("error encountered during initialisation of GBIF download:", err, "(check login credentials)", sep = " "))
 	})
 	# Wait for GBIF to process the download request
 	totalTime <- 0
