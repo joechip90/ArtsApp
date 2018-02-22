@@ -51,15 +51,15 @@ This script runs the species distribution model for the different species and th
 10. __responseDensity__ The density of samples on the response curve plots.  Lower values represent quicker computation times but coarser resolution on the resultant figures.
 
 The script produces a number of files.  For each species there is the following set of files:
-1. __[Species]_MeanEst.tif__ A GeoTIFF.  The mean estimate of the probability of occurrence.
-2. __[Species]_LowerEst.tif__ A GeoTIFF.  The lower estimate (2.5th percentile) of the probability of occurrence.
-3. __[Species]_UpperEst.tif__ A GeoTIFF.  The upper estimate (97.5th percentile) of the probability of occurrence.
-4. __[Species]_UncertaintyEst.tif__ A GeoTIFF.  The width of the prediction interval (UpperEst - LowerEst)
-5. __[Species]_MeanLinearPred.tif__ A GeoTIFF.  The mean estimate of the linear predictor (logit of the probability of occurrence).
-6. __[Species]_MeanClimatePred.tif__ A GeoTIFF.  The mean 'climate-only' part of the prediction with no spatial random effects.
-7. __[Species]_MeanSpatialPred.tif__ A GeoTIFF.  The mean spatial random effect (i.e. the non-climatic effects) on the species distribution.
-8. __[Species]_ModelPredictions.rds__ An RDS file containing the INLA model object and some extra information that can be used for the construction of the response curves.
-9. __[Species]_[Climate].pdf__ A series of PDFs containing the response curves for each the climate variables.
+1. __[Species]\_MeanEst.tif__ A GeoTIFF.  The mean estimate of the probability of occurrence.
+2. __[Species]\_LowerEst.tif__ A GeoTIFF.  The lower estimate (2.5th percentile) of the probability of occurrence.
+3. __[Species]\_UpperEst.tif__ A GeoTIFF.  The upper estimate (97.5th percentile) of the probability of occurrence.
+4. __[Species]\_UncertaintyEst.tif__ A GeoTIFF.  The width of the prediction interval (UpperEst - LowerEst)
+5. __[Species]\_MeanLinearPred.tif__ A GeoTIFF.  The mean estimate of the linear predictor (logit of the probability of occurrence).
+6. __[Species]\_MeanClimatePred.tif__ A GeoTIFF.  The mean 'climate-only' part of the prediction with no spatial random effects.
+7. __[Species]\_MeanSpatialPred.tif__ A GeoTIFF.  The mean spatial random effect (i.e. the non-climatic effects) on the species distribution.
+8. __[Species]\_ModelPredictions.rds__ An RDS file containing the INLA model object and some extra information that can be used for the construction of the response curves.
+9. __[Species]\_[Climate].pdf__ A series of PDFs containing the response curves for each the climate variables.
 
 In addition the following files are produced:
 1. __spatialEffectsMesh__ ESRI shapefile files containing the spatial random effects Delaunay triangulation.
