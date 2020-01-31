@@ -3,7 +3,7 @@
 #' 
 #' @description 
 #' This function performs a generalised linear regression model with a spatial SPDE random effect using INLA on
-#' provided occurrence data and a set of linear covariates.
+#' provided occurrence data and a set of linear covariates.  This version does not use ridge regression.
 #' 
 #' @param occurrenceData A \code{\link[sp::SpatialGridDataFrame]{SpatialGridDataFrame}} containing the gridded
 #' occurrence data.  All values in the associated \code{data.frame} greater than zero will be treated as a one
@@ -31,13 +31,7 @@
 #' stored in \code{outFolder}.
 #' @param inlaDebug A logical scalar.  If \code{TRUE}, \code{\link[INLA::inla]{inla}} produces debugging information.
 #'
-#' @return A \code{list} containing two elements:
-#' \itemize{
-#'  \item{modelSummaries}{A list of \code{\link[INLA::inla]{inla}} model objects for each species in the \code{occurrenceData}
-#'  \code{data.frame}.}
-#'  \item{spatialMesh}{A \code{\link[sp::SpatialPolygons]{SpatialPolygons}} object containing the spatial mesh used in the
-#'  \code{\link[INLA::inla]{inla}} function.}
-#' }
+#' @return 
 #' 
 #' @examples
 #' @author Joseph D. Chipperfield, \email{joseph.chipperfield@@nmbu.no}
@@ -46,7 +40,7 @@
 #' @export
 #'
 runINLASpatialGLM <- function(occurrenceData, climateData, alpha = 1.5, meshParameters = list(), meshBoundary = NULL, progressUpdater = NULL, responseDensity = 100,
-	outFolder = tempdir(), createGeoTIFF = TRUE, createRObFile = TRUE, inlaVerbose = FALSE, inlaKeep = FALSE, inlaDebug = FALSE) {
+															outFolder = tempdir(), createGeoTIFF = TRUE, createRObFile = TRUE, inlaVerbose = FALSE, inlaKeep = FALSE, inlaDebug = FALSE) {
 	### 1.1 ==== Sanity check the function inputs ====
 	updateProgressBar(progressUpdater, value = 0.0, details = "processing inputs")
 	# Sanity check the output generation flags
@@ -194,7 +188,7 @@ runINLASpatialGLM <- function(occurrenceData, climateData, alpha = 1.5, meshPara
 	expandClimateData <- cbind(as.matrix(standardClimateData), as.matrix(standardClimateData) * as.matrix(standardClimateData))
 	colnames(expandClimateData) <- expandedCovarNames
 	# Create the model formula (right hand side)
-	modelFormRHS <- "-1 + intercept + f(spatIndeces, model = spdeModel) + f(climIndeces, model = \"z\", Z = climCovars)"
+	modelFormRHS <- paste("-1 + intercept + f(spatIndeces, model = spdeModel)", paste(expandedCovarNames, collapse = " + "), sep = " + ")
 	### 1.4 ==== Create a set of climate data for response curve ====
 	inResponseData <- do.call(rbind, lapply(X = colnames(standardClimateData), FUN = function(curColName, climateData, responseDensity) {
 		# Initialise a matrix of mean values for each of the columns
@@ -220,19 +214,18 @@ runINLASpatialGLM <- function(occurrenceData, climateData, alpha = 1.5, meshPara
 		# Retrieve the response data
 		respData <- list(c(ifelse(inOccurrenceData@data[useRow, curSpecies] <= 0.0, 0, 1), rep(NA, nrow(expandResponseData))))
 		names(respData) <- paste("species", curSpecies, sep = "_")
-		# Retrieve the number of non-response rows and response rows
-		numNonResponse <- nrow(expandClimateData[useRow, ])
-		numResponse <- nrow(expandResponseData)
-		numTotal <- numNonResponse + numResponse
 		# Build the data stack for the model input
 		dataStack <- inla.stack(tag = paste(curSpecies, "Data", sep = ""),
 			data = respData,
-			A = list(rbind(effectsProjMat, matrix(NA, ncol = ncol(effectsProjMat), nrow = numResponse)), 1, 1),
-			effects = list(
+			A = append(
+				list(rbind(effectsProjMat, matrix(NA, ncol = ncol(effectsProjMat), nrow = nrow(expandResponseData))), 1),
+				as.list(rep(1, ncol(expandClimateData)))),
+			effects = append(list(
 				spatIndeces = 1:spdeModel$n.spde,
-				climIndeces = 1:numTotal,
-				intercept = rep(1.0, numTotal)
-			))
+				intercept = rep(1.0, nrow(expandClimateData[useRow, ]) + nrow(expandResponseData))),
+				as.list(rbind(as.data.frame(expandClimateData[useRow, ]), expandResponseData)))
+		)
+		browser()
 		# Set the climate covariates
 		climCovars <- as.matrix(rbind(as.data.frame(expandClimateData[useRow, ]), expandResponseData))
 		## 1.5.2 Create the full model specification ----
@@ -293,7 +286,7 @@ runINLASpatialGLM <- function(occurrenceData, climateData, alpha = 1.5, meshPara
 				lowerEst = inputPreds[respIndeces, "lowerEst"],
 				upperEst = inputPreds[respIndeces, "upperEst"])
 		}, climSummaryStats = climSummaryStats, responseDensity = responseDensity,
-			inputPreds = cbind(allPreds[nrow(allPreds) - (responseDensity * ncol(climSummaryStats) - 1):0, ], expandResponseData))
+		inputPreds = cbind(allPreds[nrow(allPreds) - (responseDensity * ncol(climSummaryStats) - 1):0, ], expandResponseData))
 		#	inputPreds = cbind(allPreds, rbind(as.data.frame(expandClimateData[useRow, ]), as.data.frame(expandResponseData)))[nrow(allPreds) - (responseDensity * ncol(climSummaryStats) - 1):0, ])
 		# Set the names of the response curves object
 		names(responseCurves) <- colnames(climSummaryStats)
@@ -319,9 +312,9 @@ runINLASpatialGLM <- function(occurrenceData, climateData, alpha = 1.5, meshPara
 		# Create a summary of the model output
 		summary(outModel)
 	}, inOccurrenceData = inOccurrenceData, expandResponseData = expandResponseData, expandClimateData = expandClimateData, useRow = useRow,
-		spdeModel = spdeModel, effectsProjMat = effectsProjMat, modelFormRHS = modelFormRHS, progressUpdater = progressUpdater,
-		climSummaryStats = rbind(meanClimate, sdClimate), responseDensity = inResponseDensity, outFolder = inOutFolder,
-		createGeoTIFF = inCreateGeoTIFF, createRObFile = inCreateRObFile, inlaVerbose = inlaVerbose, inlaKeep = inlaKeep, inlaDebug = inlaDebug)
+	spdeModel = spdeModel, effectsProjMat = effectsProjMat, modelFormRHS = modelFormRHS, progressUpdater = progressUpdater,
+	climSummaryStats = rbind(meanClimate, sdClimate), responseDensity = inResponseDensity, outFolder = inOutFolder,
+	createGeoTIFF = inCreateGeoTIFF, createRObFile = inCreateRObFile, inlaVerbose = inlaVerbose, inlaKeep = inlaKeep, inlaDebug = inlaDebug)
 	names(outResults) <- colnames(inOccurrenceData@data)
 	list(modelSummaries = outResults, spatialMesh = inlaMeshToSpatialPolygons(effectsMesh))
 }
