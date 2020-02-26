@@ -98,7 +98,7 @@ curProgress <- NULL
 # Run the elevational range analysis function (with a progress indicator)
 {
 	# Set a progress indicator
-	curProgress <- txtProgressBar(title = "Running species elevational range analysis", style = 3)
+	#curProgress <- txtProgressBar(title = "Running species elevational range analysis", style = 3)
 	# Run the elevational range analysis
 	rangeOutput <- runElevationalRangeAnalysis(
 		occurrenceGrid[1:3],
@@ -111,5 +111,5 @@ curProgress <- NULL
 		progressUpdater = curProgress,
 		elevMC = elevMC)
 	# Close the progress indicator
-	close(curProgess)
+	#close(curProgess)
 }

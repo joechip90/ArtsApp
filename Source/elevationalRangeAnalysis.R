@@ -73,7 +73,7 @@ runElevationalRangeAnalysis <- function(occurrenceGrid, bioclimateGrid, elevatio
 	### 1.3 === Retrieve the elevational limits for each species ====
 	createElevationTraits <- function(curSpecies, elevMC, elevationValues, predictType, occurrenceData) {
 		# Retrieve the species predictions
-		curSpeciesOutput <- readRDS(paste(outFolder, "Species_", curSpecies, "_ModelPredictions.rds", sep = ""))
+		curSpeciesOutput <- readRDS(paste(outFolder, "/Species_", curSpecies, "_ModelPredictions.rds", sep = ""))
 		# Calculate the probability of occurrences at each cell by applying the inverse logit to the prediction
 		probVals <- 1.0 / (1.0 + exp(-curSpeciesOutput$spatialPredictions@data[, predictType]))
 		# Sample a random set of occurrence using the prediction
@@ -85,21 +85,21 @@ runElevationalRangeAnalysis <- function(occurrenceGrid, bioclimateGrid, elevatio
 		# Create the lowest, highest, and range of elevations in the sampled grid
 		elevRanges <- t(apply(X = randomOcc, FUN = function(curOccVec, elevationValues) {
 			# Find the elevations that the species has been observed at
-			obsElevation <- elevationValues[isTRUE(curOccVec)]
+			obsElevation <- elevationValues[sapply(X = curOccVec, FUN = isTRUE)]
 			# Find the range of elevations
 			obsRange <- range(obsElevation, na.rm = TRUE)
 			c(obsRange[1], obsRange[2], diff(obsRange))
-		}, MARGIN = 1, elevationValues = elevationValues))
+		}, MARGIN = 2, elevationValues = elevationValues))
 		setNames(c(
 			mean(elevRanges[, 1]),
-			sd(elevRange[, 1]),
+			sd(elevRanges[, 1]),
 			quantile(elevRanges[, 1], probs = c(0.05, 0.5)),
 			mean(elevRanges[, 2]),
-			sd(elevRange[, 2]),
+			sd(elevRanges[, 2]),
 			quantile(elevRanges[, 2], probs = c(0.95, 0.5)),
 			mean(elevRanges[, 3]),
-			sd(elevRange[, 3]),
-			quantile(elevRanges[, 3], probs = c(0.025, 0.975, 0.5)),
+			sd(elevRanges[, 3]),
+			quantile(elevRanges[, 3], probs = c(0.025, 0.975, 0.5))
 		), c(
 			"estMinElevationMean",
 			"estMinElevationSD",
@@ -109,24 +109,25 @@ runElevationalRangeAnalysis <- function(occurrenceGrid, bioclimateGrid, elevatio
 			"estMaxElevation95thPercentile", "estMaxElevationMedian",
 			"estRangeElevationMean",
 			"estRangeElevationSD",
-			"estRangeElevation2.5thPercentile", "estRangeElevation97.5thPercentile", "estRangeElevationMedian",
+			"estRangeElevation2.5thPercentile", "estRangeElevation97.5thPercentile", "estRangeElevationMedian"
 		))
 	}
 	# Create predictions of the elevational range of each of the species dependent upon the modelled distribution
-	realisedElevation <- sapply(X = names(inOccurrenceData), FUN = createElevationTraits, elevMC = elevMC, elevationValues = elevationValues, predictType = "meanLinearPred", occurrenceData = inOccurrenceData)
-	fundamentalElevation <- sapply(X = names(inOccurrenceData), FUN = createElevationTraits, elevMC = elevMC, elevationValues = elevationValues, predictType = "meanClimatePred", occurrenceData = inOccurrenceData)
+	realisedElevation <- t(sapply(X = names(inOccurrenceData), FUN = createElevationTraits, elevMC = elevMC, elevationValues = elevationValues, predictType = "meanLinearPred", occurrenceData = inOccurrenceData))
+	fundamentalElevation <- t(sapply(X = names(inOccurrenceData), FUN = createElevationTraits, elevMC = elevMC, elevationValues = elevationValues, predictType = "meanClimatePred", occurrenceData = inOccurrenceData))
+	browser()
 	rownames(realisedElevation) <- names(inOccurrenceData)
 	colnames(realisedElevation) <- paste(colnames(realisedElevation), "fullPrediction", sep = "_")
 	rownames(fundamentalElevation) <- names(inOccurrenceData)
 	colnames(fundamentalElevation) <- paste(colnames(fundamentalElevation), "climateOnly", sep = "_")
 	# Observed elevational range
 	knownElevation <- t(apply(X = as.matrix(inOccurrenceData@data), FUN = function(curObs, elevationValues) {
-		range(elevationValues[isTrue(curObs)], na.rm = TRUE)
+		range(elevationValues[sapply(X = as.logical(curObs), FUN = isTRUE)], na.rm = TRUE)
 	}, MARGIN = 2, elevationValues = elevationValues))
 	colnames(knownElevation) <- c("observedMinElevation", "observedMaxElevation")
 	rownames(knownElevation) <- names(inOccurrenceData)
 	# Link all the elevation tables together
-	elevationAttributes <- cbind(knownbElevation, realisedElevation, fundamentalElevation)
+	elevationAttributes <- cbind(knownElevation, realisedElevation, fundamentalElevation)
 	# Produce a table in the output folder
 	write.csv2(as.data.frame(elevationAttributes), paste(outFolder, "/ElevationAttributes.csv", sep = ""))
 	append(sdmOutputs, list(
