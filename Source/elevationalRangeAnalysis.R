@@ -115,7 +115,6 @@ runElevationalRangeAnalysis <- function(occurrenceGrid, bioclimateGrid, elevatio
 	# Create predictions of the elevational range of each of the species dependent upon the modelled distribution
 	realisedElevation <- t(sapply(X = names(inOccurrenceData), FUN = createElevationTraits, elevMC = elevMC, elevationValues = elevationValues, predictType = "meanLinearPred", occurrenceData = inOccurrenceData))
 	fundamentalElevation <- t(sapply(X = names(inOccurrenceData), FUN = createElevationTraits, elevMC = elevMC, elevationValues = elevationValues, predictType = "meanClimatePred", occurrenceData = inOccurrenceData))
-	browser()
 	rownames(realisedElevation) <- names(inOccurrenceData)
 	colnames(realisedElevation) <- paste(colnames(realisedElevation), "fullPrediction", sep = "_")
 	rownames(fundamentalElevation) <- names(inOccurrenceData)
@@ -128,9 +127,48 @@ runElevationalRangeAnalysis <- function(occurrenceGrid, bioclimateGrid, elevatio
 	rownames(knownElevation) <- names(inOccurrenceData)
 	# Link all the elevation tables together
 	elevationAttributes <- cbind(knownElevation, realisedElevation, fundamentalElevation)
-	# Produce a table in the output folder
+	browser()
+	### 1.4 ==== Retrieve the cumulative elevation distributions ====
+	createCumulativeElevation <- function(curSpecies, elevationValues, predictType, elevationAttributes) {
+		# Retrieve the species predictions
+		curSpeciesOutput <- readRDS(paste(outFolder, "/Species_", curSpecies, "_ModelPredictions.rds", sep = ""))
+		# Calculate the probability of occurrences at each cell by applying the inverse logit to the prediction
+		probVals <- 1.0 / (1.0 + exp(-curSpeciesOutput$spatialPredictions@data[, predictType]))
+		# Retrieve the current elevation range of the species
+		elevRange <- elevationAttributes[curSpecies, c("observedMinElevation", "observedMaxElevation")]
+		# Calculate the probability distibution for the lower range of the species
+		minRangeProb <- 1.0 - ifelse(elevationValues >= elevRange[1], 0.0, sapply(X = elevationValues, FUN = function(curElev, elevationValues, probVals) {
+			prod(probVals[curElev >= elevationValues], na.rm = TRUE)
+		}, elevationValues = elevationValues, probVals = probVals))
+		# Calculate the probability distribution for the upper range of the species
+		maxRangeProb <- 1.0 - ifelse(elevationValues <= elevRange[2], 0.0, sapply(X = elevationValues, FUN = function(curElev, elevationValues, probVals) {
+			prod(probVals[curElev <= elevationValues], na.rm = TRUE)
+		}, elevationValues = elevationValues, probVals = probVals))
+		# Calculate the merged probability
+		mergedProb <- ifelse(elevationValues < elevRange[1], minRangeProb, ifelse(elevationValues > elevRange[2], maxRangeProb, 1.0))
+		rangeType <- factor(
+			ifelse(elevationValues < elevRange[1], "lowRangeEstimate", ifelse(elevationValues > elevRange[2], "highRangeEstimate", "knownRange")),
+			levels = c("knownRange", "lowRangeEstimate", "highRangeEstimate"))
+		data.frame(
+			elevation = elevationValues,
+			minRangeProb = minRangeProb,
+			maxRangeProb = maxRangeProb,
+			mergedProb = mergedProb,
+			rangeType = rangeType,
+			species = rep(curSpecies, length(elevationValues))
+		)[order(elevationValues), ]
+		#setNames(list(minRangeProb, maxRangeProb, mergedProb, rangeType), paste(curSpecies, c("minRangeProb", "maxRangeProb", "mergedProb", "rangeType"), sep = "_"))
+	}
+	# Create data frame of the elevational range probabilities
+	realisedElevationProbs <- do.call(rbind, lapply(X = names(inOccurrenceData), FUN = createCumulativeElevation, elevationValues = elevationValues, predictType = "meanLinearPred", elevationAttributes = elevationAttributes))
+	fundamentalElevationProbs <- do.call(rbind, lapply(X = names(inOccurrenceData), FUN = createCumulativeElevation, elevationValues = elevationValues, predictType = "meanClimatePred", elevationAttributes = elevationAttributes))
+	# Produce a set of tables in the output folder
 	write.csv2(as.data.frame(elevationAttributes), paste(outFolder, "/ElevationAttributes.csv", sep = ""))
+	write.csv2(realisedElevationProbs, paste(outFolder, "/ElevationProbabilities_Realised.csv", sep = ""))
+	write.csv2(fundamentalElevationProbs, paste(outFolder, "/ElevationProbabilities_Fundamental.csv", sep = ""))
 	append(sdmOutputs, list(
-		elevationAttributes = elevationAttributes
+		elevationAttributes = elevationAttributes,
+		realisedElevationProbs = realisedElevationProbs,
+		fundamentalElevationProbs = fundamentalElevationProbs
 	))
 }
